@@ -1,10 +1,11 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { defaultDeps, getExtraction } from '~/server/api'
+import { getExtraction } from '~/server/api'
+import { runtimeDeps } from '~/server/runtime'
 
 export const Route = createFileRoute('/api/jobs/$jobId/extraction')({
   server: {
     handlers: {
-      GET: ({ params }) => getExtraction(params.jobId, defaultDeps),
+      GET: ({ params }) => getExtraction(params.jobId, runtimeDeps()),
     },
   },
 })

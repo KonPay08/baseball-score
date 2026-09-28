@@ -26,7 +26,7 @@ Base path: `/api`。レスポンスはすべてJSON。
   status: 'processing' | 'succeeded' | 'failed'
   createdAt: string; updatedAt: string
   image: { fileName: string; contentType: string; size: number }
-  extractor: string            // 'sample-fixture'
+  extractor: string            // 'sample-fixture' | 'workers-ai:<model>'
   error: { code: 'extraction_failed' | 'internal_error'; message: string } | null
   record: GameRecord | null    // 修正を反映した記録
   revision: number             // 修正のたびに+1

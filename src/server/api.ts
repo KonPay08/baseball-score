@@ -1,6 +1,6 @@
 import { applyCorrections, CorrectionError, type Correction } from '~/features/scoresheet/review'
-import { sampleExtractor, type ScoreSheetExtractor } from './extractor'
-import { createMemoryJobStore, runExtraction, toJobView, type Job, type JobStore } from './jobs'
+import type { ScoreSheetExtractor } from './extractor'
+import { runExtraction, toJobView, type Job, type JobStore } from './jobs'
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
@@ -133,9 +133,4 @@ export async function correctRecord(jobId: string, request: Request, deps: ApiDe
     }
     throw e
   }
-}
-
-export const defaultDeps: ApiDeps = {
-  store: createMemoryJobStore(),
-  extractor: sampleExtractor,
 }

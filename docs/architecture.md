@@ -37,10 +37,14 @@ Cloudflare Workers（ローカルでは `@cloudflare/vite-plugin` 上の workerd
 
 ## External Services
 
-AI解析は未選定。アプリは `sampleExtractor` を使う。
+AI解析のモデルは未選定（評価待ち）。アプリの抽出器は Worker の環境変数でリクエストごとに選ぶ（`src/server/extractorConfig.ts`、`src/server/runtime.ts`）。
 
-- Workers AI の抽出器（`src/server/workersAi.ts`）と評価スクリプト（`pnpm eval`）がある。評価の手順は `docs/evaluation.md`、判断は `docs/decisions/0002-workers-ai-extraction-evaluation.md`。
-- 採用モデルが決まったら、AI binding を `wrangler.jsonc` に追加し、`createWorkersAiExtractor` を `defaultDeps.extractor` に渡す。
+| 環境変数 | 内容 |
+| --- | --- |
+| `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` | 両方あれば Workers AI の REST API で読み取る。どちらかが無ければ `sampleExtractor`。 |
+| `WORKERS_AI_MODEL` | 任意。`WORKERS_AI_VISION_CANDIDATES` のモデル名。未指定は暫定で `@cf/meta/llama-4-scout-17b-16e-instruct`。候補外の値は解析失敗になる。 |
+
+- Workers AI の抽出器（`src/server/workersAi.ts`）と評価スクリプト（`pnpm eval`）の手順は `docs/evaluation.md`、判断は `docs/decisions/0002-workers-ai-extraction-evaluation.md` と `0003-select-extractor-from-env.md`。
 
 ## Architecture Principles
 
