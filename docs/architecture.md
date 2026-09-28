@@ -37,7 +37,10 @@ Cloudflare Workers（ローカルでは `@cloudflare/vite-plugin` 上の workerd
 
 ## External Services
 
-なし。AI解析は未選定。`ScoreSheetExtractor` の実装（Workers AI など）を追加して `defaultDeps.extractor` を差し替える。
+AI解析は未選定。アプリは `sampleExtractor` を使う。
+
+- Workers AI の抽出器（`src/server/workersAi.ts`）と評価スクリプト（`pnpm eval`）がある。評価の手順は `docs/evaluation.md`、判断は `docs/decisions/0002-workers-ai-extraction-evaluation.md`。
+- 採用モデルが決まったら、AI binding を `wrangler.jsonc` に追加し、`createWorkersAiExtractor` を `defaultDeps.extractor` に渡す。
 
 ## Architecture Principles
 

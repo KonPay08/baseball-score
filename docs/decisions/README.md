@@ -29,3 +29,4 @@ Accepted / Superseded
 ## Decisions
 
 - [0001. Prototype API architecture](0001-prototype-api-architecture.md)
+- [0002. Workers AI extraction evaluation harness](0002-workers-ai-extraction-evaluation.md)

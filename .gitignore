@@ -25,3 +25,8 @@ test-results/
 
 # Logs
 *.log
+
+# Evaluation (real score sheets contain personal data)
+eval/samples/*
+!eval/samples/README.md
+eval/results/

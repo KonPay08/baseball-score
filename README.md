@@ -17,6 +17,7 @@
 - [docs/domain.md](docs/domain.md) — Domain Context
 - [docs/architecture.md](docs/architecture.md) — Architecture
 - [docs/api.md](docs/api.md) — API仕様
+- [docs/evaluation.md](docs/evaluation.md) — AI読み取り精度の評価
 - [docs/development.md](docs/development.md) — Development Environment
 
 ## Commands

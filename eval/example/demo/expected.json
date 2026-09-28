@@ -1,0 +1,205 @@
+{
+  "teamName": "ホークス",
+  "opponentName": "イーグルス",
+  "gameDate": "2026-09-27",
+  "batters": [
+    {
+      "battingOrder": 1,
+      "name": "佐藤 大翔",
+      "plateAppearances": [
+        {
+          "inning": 1,
+          "result": "1B",
+          "rbi": 0,
+          "run": true
+        },
+        {
+          "inning": 3,
+          "result": "OUT",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 5,
+          "result": "BB",
+          "rbi": 0,
+          "run": true
+        }
+      ]
+    },
+    {
+      "battingOrder": 2,
+      "name": "鈴木 蓮",
+      "plateAppearances": [
+        {
+          "inning": 1,
+          "result": "SH",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 3,
+          "result": "OUT",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 5,
+          "result": "2B",
+          "rbi": 1,
+          "run": false
+        }
+      ]
+    },
+    {
+      "battingOrder": 3,
+      "name": "高橋 湊",
+      "plateAppearances": [
+        {
+          "inning": 1,
+          "result": "2B",
+          "rbi": 1,
+          "run": true
+        },
+        {
+          "inning": 3,
+          "result": "E",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 6,
+          "result": "OUT",
+          "rbi": 0,
+          "run": false
+        }
+      ]
+    },
+    {
+      "battingOrder": 4,
+      "name": "田中 陽翔",
+      "plateAppearances": [
+        {
+          "inning": 1,
+          "result": "HR",
+          "rbi": 2,
+          "run": true
+        },
+        {
+          "inning": 4,
+          "result": "K",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 6,
+          "result": "SF",
+          "rbi": 1,
+          "run": false
+        }
+      ]
+    },
+    {
+      "battingOrder": 5,
+      "name": "伊藤 悠真",
+      "plateAppearances": [
+        {
+          "inning": 2,
+          "result": "OUT",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 4,
+          "result": "1B",
+          "rbi": 0,
+          "run": true
+        },
+        {
+          "inning": 6,
+          "result": "OUT",
+          "rbi": 0,
+          "run": false
+        }
+      ]
+    },
+    {
+      "battingOrder": 6,
+      "name": "渡辺 蒼",
+      "plateAppearances": [
+        {
+          "inning": 2,
+          "result": "K",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 4,
+          "result": "3B",
+          "rbi": 1,
+          "run": true
+        },
+        {
+          "inning": 6,
+          "result": "OUT",
+          "rbi": 0,
+          "run": false
+        }
+      ]
+    },
+    {
+      "battingOrder": 7,
+      "name": "山本 樹",
+      "plateAppearances": [
+        {
+          "inning": 2,
+          "result": "HBP",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 4,
+          "result": "OUT",
+          "rbi": 1,
+          "run": false
+        }
+      ]
+    },
+    {
+      "battingOrder": 8,
+      "name": "中村 律",
+      "plateAppearances": [
+        {
+          "inning": 3,
+          "result": "1B",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 5,
+          "result": "K",
+          "rbi": 0,
+          "run": false
+        }
+      ]
+    },
+    {
+      "battingOrder": 9,
+      "name": "小林 颯",
+      "plateAppearances": [
+        {
+          "inning": 3,
+          "result": "FC",
+          "rbi": 0,
+          "run": false
+        },
+        {
+          "inning": 5,
+          "result": "OUT",
+          "rbi": 0,
+          "run": false
+        }
+      ]
+    }
+  ]
+}

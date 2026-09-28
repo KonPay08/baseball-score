@@ -9,11 +9,11 @@
     "skipLibCheck": true,
     "noEmit": true,
     "verbatimModuleSyntax": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "node"],
     "baseUrl": ".",
     "paths": {
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src", "tests", "fixtures", "vite.config.ts", "vitest.config.ts"]
+  "include": ["src", "tests", "fixtures", "scripts", "vite.config.ts", "vitest.config.ts"]
 }
