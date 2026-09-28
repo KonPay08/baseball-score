@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "prototype",
+  "compatibility_date": "2026-09-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "@tanstack/react-start/server-entry",
+  "observability": {
+    "enabled": true
+  }
+  // Databaseが必要な場合のみD1 bindingを追加する
+  // "d1_databases": [
+  //   { "binding": "DB", "database_name": "prototype", "database_id": "TBD" }
+  // ]
+}
