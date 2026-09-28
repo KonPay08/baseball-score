@@ -28,4 +28,4 @@ Accepted / Superseded
 
 ## Decisions
 
-（まだ記録なし）
+- [0001. Prototype API architecture](0001-prototype-api-architecture.md)

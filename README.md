@@ -16,6 +16,7 @@
 - [docs/product.md](docs/product.md) — Product Context
 - [docs/domain.md](docs/domain.md) — Domain Context
 - [docs/architecture.md](docs/architecture.md) — Architecture
+- [docs/api.md](docs/api.md) — API仕様
 - [docs/development.md](docs/development.md) — Development Environment
 
 ## Commands
