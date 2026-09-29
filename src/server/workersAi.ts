@@ -7,7 +7,7 @@ import {
   type PlateAppearanceResult,
   PLATE_APPEARANCE_RESULTS,
 } from '~/features/scoresheet/model'
-import { ExtractionError, type ScoreSheetExtractor, type ScoreSheetImage } from './extractor'
+import { ExtractionError, type ExtractionContext, type ScoreSheetExtractor, type ScoreSheetImage } from './extractor'
 
 /**
  * How the image is passed to the model. Workers AI vision models do not share one input format:
@@ -102,11 +102,24 @@ export const EXTRACTION_PROMPT = [
   '画像から自チームの打撃記録を読み取り、指定の JSON だけを返してください。',
   '各項目は { "value": 値, "confidence": "high" | "low" | "unreadable" } で返します。',
   '読めない・自信がない項目を推測で埋めないでください。読めない場合は value を null、confidence を "unreadable" にします。',
-  'batters は打順ごとに1件、plateAppearances は打席ごとに1件で、inning はその打席のイニングです。',
+  'batters は選手ごとに1件、plateAppearances は打席ごとに1件で、inning はその打席のイニングです。',
+  '途中交代した選手は同じ battingOrder の別の要素にし、出場した順に並べます。',
   `result は次のコードのいずれかです: ${PLATE_APPEARANCE_RESULTS.join(', ')}`,
   '（1B=単打, 2B=二塁打, 3B=三塁打, HR=本塁打, BB=四球, HBP=死球, K=三振, OUT=凡打, SH=犠打, SF=犠飛, E=失策出塁, FC=野選, INT=打撃妨害）',
   'rbi はその打席の打点（整数）、run はその打者が得点したかどうかです。gameDate は YYYY-MM-DD です。',
 ].join('\n')
+
+/** Adds the registered roster so the model copies a registered spelling instead of transcribing from scratch. */
+export function buildExtractionPrompt(context?: ExtractionContext): string {
+  const names = context?.rosterNames ?? []
+  if (names.length === 0) return EXTRACTION_PROMPT
+  return [
+    EXTRACTION_PROMPT,
+    '登録済みの選手名は次のとおりです。スコア表の名前がこのどれかと同じ選手なら、この表記のまま name に入れてください。',
+    '該当する選手がいない場合は、スコア表の表記どおりに読み取ってください。',
+    ...names.map((n) => `- ${n}`),
+  ].join('\n')
+}
 
 export function toDataUrl(image: ScoreSheetImage): string {
   const bytes = new Uint8Array(image.bytes)
@@ -117,17 +130,22 @@ export function toDataUrl(image: ScoreSheetImage): string {
   return `data:${image.contentType};base64,${btoa(binary)}`
 }
 
-export function buildModelInput(candidate: WorkersAiCandidate, image: ScoreSheetImage): Record<string, unknown> {
+export function buildModelInput(
+  candidate: WorkersAiCandidate,
+  image: ScoreSheetImage,
+  context?: ExtractionContext,
+): Record<string, unknown> {
+  const prompt = buildExtractionPrompt(context)
   const dataUrl = toDataUrl(image)
   const instruction = 'このスコア表を読み取ってください。'
   const messages =
     candidate.inputStyle === 'image-field'
       ? [
-          { role: 'system', content: EXTRACTION_PROMPT },
+          { role: 'system', content: prompt },
           { role: 'user', content: instruction },
         ]
       : [
-          { role: 'system', content: EXTRACTION_PROMPT },
+          { role: 'system', content: prompt },
           {
             role: 'user',
             content: [
@@ -234,8 +252,9 @@ export async function runWorkersAiExtraction(
   candidate: WorkersAiCandidate,
   run: ModelRunner,
   image: ScoreSheetImage,
+  context?: ExtractionContext,
 ): Promise<WorkersAiExtraction> {
-  const result = await run(candidate.model, buildModelInput(candidate, image))
+  const result = await run(candidate.model, buildModelInput(candidate, image, context))
   const { content, usage } = readModelResult(result)
   const rawText = typeof content === 'string' ? content : JSON.stringify(content)
   return { record: parseModelOutput(content), rawText, usage }
@@ -244,8 +263,8 @@ export async function runWorkersAiExtraction(
 export function createWorkersAiExtractor(candidate: WorkersAiCandidate, run: ModelRunner): ScoreSheetExtractor {
   return {
     name: `workers-ai:${candidate.model}`,
-    async extract(image) {
-      return (await runWorkersAiExtraction(candidate, run, image)).record
+    async extract(image, context) {
+      return (await runWorkersAiExtraction(candidate, run, image, context)).record
     },
   }
 }

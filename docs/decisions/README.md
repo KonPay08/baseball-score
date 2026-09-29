@@ -32,3 +32,4 @@ Accepted / Superseded
 - [0002. Workers AI extraction evaluation harness](0002-workers-ai-extraction-evaluation.md)
 - [0003. Select the extractor from Worker environment variables](0003-select-extractor-from-env.md)
 - [0004. OpenAI extractor](0004-openai-extractor.md)
+- [0005. Roster matching for player names](0005-roster-matching.md)

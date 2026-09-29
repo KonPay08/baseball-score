@@ -56,6 +56,8 @@ export interface Batter {
   id: string
   battingOrder: number
   name: Cell<string>
+  /** Roster player the name was matched to. Unset until matched or entered by the user. */
+  playerId?: string
   plateAppearances: PlateAppearance[]
 }
 
@@ -67,6 +69,7 @@ export interface GameRecord {
 }
 
 export type CellField = 'result' | 'rbi' | 'run'
+export type ReviewField = CellField | 'name'
 
 export function isResolved<T>(cell: Cell<T>): boolean {
   return cell.value !== null && (cell.confidence === 'high' || cell.source === 'corrected')

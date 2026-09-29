@@ -1,7 +1,7 @@
-import { ExtractionError, type ScoreSheetExtractor, type ScoreSheetImage } from './extractor'
+import { ExtractionError, type ExtractionContext, type ScoreSheetExtractor, type ScoreSheetImage } from './extractor'
 import {
   EXTRACTION_JSON_SCHEMA,
-  EXTRACTION_PROMPT,
+  buildExtractionPrompt,
   parseModelOutput,
   toDataUrl,
   type TokenUsage,
@@ -33,10 +33,14 @@ export function toStrictSchema(schema: unknown): unknown {
   return result
 }
 
-export function buildOpenAiRequest(candidate: OpenAiCandidate, image: ScoreSheetImage): Record<string, unknown> {
+export function buildOpenAiRequest(
+  candidate: OpenAiCandidate,
+  image: ScoreSheetImage,
+  context?: ExtractionContext,
+): Record<string, unknown> {
   return {
     model: candidate.model,
-    instructions: EXTRACTION_PROMPT,
+    instructions: buildExtractionPrompt(context),
     input: [
       {
         role: 'user',
@@ -89,12 +93,13 @@ export async function runOpenAiExtraction(
   candidate: OpenAiCandidate,
   options: { apiKey: string; fetch?: typeof fetch },
   image: ScoreSheetImage,
+  context?: ExtractionContext,
 ): Promise<WorkersAiExtraction> {
   const doFetch = options.fetch ?? fetch
   const res = await doFetch(OPENAI_RESPONSES_URL, {
     method: 'POST',
     headers: { Authorization: `Bearer ${options.apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify(buildOpenAiRequest(candidate, image)),
+    body: JSON.stringify(buildOpenAiRequest(candidate, image, context)),
   })
   const body: unknown = await res.json().catch(() => null)
   if (!res.ok) {
@@ -111,8 +116,8 @@ export function createOpenAiExtractor(
 ): ScoreSheetExtractor {
   return {
     name: `openai:${candidate.model}`,
-    async extract(image) {
-      return (await runOpenAiExtraction(candidate, options, image)).record
+    async extract(image, context) {
+      return (await runOpenAiExtraction(candidate, options, image, context)).record
     },
   }
 }

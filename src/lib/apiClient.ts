@@ -1,4 +1,5 @@
-import type { CellField } from '~/features/scoresheet/model'
+import type { Correction } from '~/features/scoresheet/review'
+import type { Player } from '~/features/scoresheet/roster'
 import type { JobView } from '~/server/jobs'
 
 export interface ApiError {
@@ -29,7 +30,7 @@ export async function uploadScoreSheet(file: File, idempotencyKey: string): Prom
 export async function submitCorrections(
   jobId: string,
   expectedRevision: number,
-  corrections: { plateAppearanceId: string; field: CellField; value: unknown }[],
+  corrections: Correction[],
 ): Promise<JobView> {
   const res = await fetch(`/api/jobs/${jobId}/record`, {
     method: 'PATCH',
@@ -37,4 +38,10 @@ export async function submitCorrections(
     body: JSON.stringify({ expectedRevision, corrections }),
   })
   return parse(res)
+}
+
+export async function fetchPlayers(): Promise<Player[]> {
+  const res = await fetch('/api/players')
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  return ((await res.json()) as { players: Player[] }).players
 }

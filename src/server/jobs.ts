@@ -1,6 +1,7 @@
 import type { GameRecord } from '~/features/scoresheet/model'
 import { listReviewItems, type ReviewItem } from '~/features/scoresheet/review'
 import { calculateBattingStats, type BattingStats } from '~/features/scoresheet/stats'
+import { matchRoster, type Player } from '~/features/scoresheet/roster'
 import { ExtractionError, type ScoreSheetExtractor, type ScoreSheetImage } from './extractor'
 
 export type JobStatus = 'processing' | 'succeeded' | 'failed'
@@ -60,15 +61,16 @@ export async function runExtraction(
   extractor: ScoreSheetExtractor,
   job: Job,
   image: ScoreSheetImage,
+  roster: readonly Player[] = [],
 ): Promise<Job> {
   const now = () => new Date().toISOString()
   try {
-    const extracted = await extractor.extract(image)
+    const extracted = await extractor.extract(image, { rosterNames: roster.map((p) => p.name) })
     const done: Job = {
       ...job,
       status: 'succeeded',
       extracted,
-      record: structuredClone(extracted),
+      record: matchRoster(extracted, roster),
       updatedAt: now(),
     }
     store.put(done)

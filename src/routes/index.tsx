@@ -1,8 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BattingStatsTable } from '~/components/BattingStatsTable'
 import { ScoreSheetReview } from '~/components/ScoreSheetReview'
-import { submitCorrections, uploadScoreSheet } from '~/lib/apiClient'
+import { fetchPlayers, submitCorrections, uploadScoreSheet } from '~/lib/apiClient'
 import type { JobView } from '~/server/jobs'
 
 export const Route = createFileRoute('/')({
@@ -15,6 +15,13 @@ function Home() {
   const [job, setJob] = useState<JobView | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [rosterNames, setRosterNames] = useState<string[]>([])
+
+  useEffect(() => {
+    fetchPlayers()
+      .then((players) => setRosterNames(players.map((p) => p.name)))
+      .catch(() => setRosterNames([]))
+  }, [job?.revision, job?.id])
 
   const run = async (action: () => Promise<JobView>) => {
     setBusy(true)
@@ -60,9 +67,6 @@ function Home() {
         >
           {busy ? '処理中…' : '解析する'}
         </button>
-        <p className="w-full text-xs text-amber-700">
-          注意：AI解析は未選定のため、現在はどの画像でも同じサンプル抽出結果を返します。
-        </p>
       </form>
 
       {error && (
@@ -93,6 +97,7 @@ function Home() {
               <ScoreSheetReview
                 key={job.revision}
                 job={job}
+                rosterNames={rosterNames}
                 submitting={busy}
                 onSubmit={(corrections) =>
                   void run(() => submitCorrections(job.id, job.revision, corrections))

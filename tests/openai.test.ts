@@ -88,3 +88,11 @@ describe('runOpenAiExtraction', () => {
     await expect(extractor.extract(image)).rejects.toThrow('OpenAI request failed (401) Incorrect API key')
   })
 })
+
+describe('roster in the prompt', () => {
+  it('lists registered names in the instructions only when given', () => {
+    const withRoster = buildOpenAiRequest(candidate, image, { rosterNames: ['山田 太郎'] })
+    expect(withRoster.instructions).toContain('- 山田 太郎')
+    expect(buildOpenAiRequest(candidate, image).instructions).not.toContain('登録済み')
+  })
+})

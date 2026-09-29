@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiJobsRouteImport } from './routes/api/jobs'
+import { Route as ApiPlayersRouteImport } from './routes/api/players'
 import { Route as ApiJobsJobIdRouteImport } from './routes/api/jobs.$jobId'
 import { Route as ApiJobsJobIdExtractionRouteImport } from './routes/api/jobs.$jobId.extraction'
 import { Route as ApiJobsJobIdRecordRouteImport } from './routes/api/jobs.$jobId.record'
@@ -23,6 +24,11 @@ const IndexRoute = IndexRouteImport.update({
 const ApiJobsRoute = ApiJobsRouteImport.update({
   id: '/api/jobs',
   path: '/api/jobs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPlayersRoute = ApiPlayersRouteImport.update({
+  id: '/api/players',
+  path: '/api/players',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiJobsJobIdRoute = ApiJobsJobIdRouteImport.update({
@@ -44,6 +50,7 @@ const ApiJobsJobIdRecordRoute = ApiJobsJobIdRecordRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/api/jobs': typeof ApiJobsRouteWithChildren
+  '/api/players': typeof ApiPlayersRoute
   '/api/jobs/$jobId': typeof ApiJobsJobIdRouteWithChildren
   '/api/jobs/$jobId/extraction': typeof ApiJobsJobIdExtractionRoute
   '/api/jobs/$jobId/record': typeof ApiJobsJobIdRecordRoute
@@ -51,6 +58,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/api/jobs': typeof ApiJobsRouteWithChildren
+  '/api/players': typeof ApiPlayersRoute
   '/api/jobs/$jobId': typeof ApiJobsJobIdRouteWithChildren
   '/api/jobs/$jobId/extraction': typeof ApiJobsJobIdExtractionRoute
   '/api/jobs/$jobId/record': typeof ApiJobsJobIdRecordRoute
@@ -59,6 +67,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/api/jobs': typeof ApiJobsRouteWithChildren
+  '/api/players': typeof ApiPlayersRoute
   '/api/jobs/$jobId': typeof ApiJobsJobIdRouteWithChildren
   '/api/jobs/$jobId/extraction': typeof ApiJobsJobIdExtractionRoute
   '/api/jobs/$jobId/record': typeof ApiJobsJobIdRecordRoute
@@ -68,6 +77,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/api/jobs'
+    | '/api/players'
     | '/api/jobs/$jobId'
     | '/api/jobs/$jobId/extraction'
     | '/api/jobs/$jobId/record'
@@ -75,6 +85,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/api/jobs'
+    | '/api/players'
     | '/api/jobs/$jobId'
     | '/api/jobs/$jobId/extraction'
     | '/api/jobs/$jobId/record'
@@ -82,6 +93,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/api/jobs'
+    | '/api/players'
     | '/api/jobs/$jobId'
     | '/api/jobs/$jobId/extraction'
     | '/api/jobs/$jobId/record'
@@ -90,6 +102,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ApiJobsRoute: typeof ApiJobsRouteWithChildren
+  ApiPlayersRoute: typeof ApiPlayersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -106,6 +119,13 @@ declare module '@tanstack/react-router' {
       path: '/api/jobs'
       fullPath: '/api/jobs'
       preLoaderRoute: typeof ApiJobsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/players': {
+      id: '/api/players'
+      path: '/api/players'
+      fullPath: '/api/players'
+      preLoaderRoute: typeof ApiPlayersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/jobs/$jobId': {
@@ -160,6 +180,7 @@ const ApiJobsRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ApiJobsRoute: ApiJobsRouteWithChildren,
+  ApiPlayersRoute: ApiPlayersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

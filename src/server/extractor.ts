@@ -9,9 +9,14 @@ export interface ScoreSheetImage {
 
 export class ExtractionError extends Error {}
 
+export interface ExtractionContext {
+  /** Registered player names the model may choose from. */
+  rosterNames: readonly string[]
+}
+
 export interface ScoreSheetExtractor {
   readonly name: string
-  extract(image: ScoreSheetImage): Promise<GameRecord>
+  extract(image: ScoreSheetImage, context?: ExtractionContext): Promise<GameRecord>
 }
 
 /**
