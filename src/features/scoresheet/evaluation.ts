@@ -153,6 +153,6 @@ export function evaluateExtraction(truth: GroundTruth, record: GameRecord): Eval
     accuracy: total.expected === 0 ? null : (total.correct + total.correctFlagged) / total.expected,
     extraBatters: record.batters.length - matchedBatters.size,
     extraPlateAppearances,
-    reviewItems: listReviewItems(record).length,
+    reviewItems: listReviewItems(record).filter((i) => i.field !== 'name' || i.confidence !== 'high').length,
   }
 }

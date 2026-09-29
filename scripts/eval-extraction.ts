@@ -7,6 +7,7 @@
  *   pnpm eval --models @cf/meta/llama-4-scout-17b-16e-instruct
  *
  * Each sample is a directory containing one image (image.jpg / .jpeg / .png / .webp) and expected.json.
+ * An optional roster.json (string array of registered player names) is passed to the model like the app does.
  */
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { extname, join } from 'node:path'
@@ -39,6 +40,7 @@ interface Sample {
   id: string
   image: ScoreSheetImage
   truth: GroundTruth
+  rosterNames: string[]
 }
 
 interface RunResult {
@@ -50,6 +52,14 @@ interface RunResult {
   report: EvaluationReport | null
   error: string | null
   rawText: string | null
+}
+
+function parseRoster(text: string): string[] {
+  const value: unknown = JSON.parse(text)
+  if (!Array.isArray(value) || !value.every((v) => typeof v === 'string')) {
+    throw new Error('roster.json must be an array of names')
+  }
+  return value
 }
 
 async function loadSamples(dir: string): Promise<Sample[]> {
@@ -72,6 +82,7 @@ async function loadSamples(dir: string): Promise<Sample[]> {
         bytes: bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength),
       },
       truth: parseGroundTruth(JSON.parse(await readFile(join(sampleDir, 'expected.json'), 'utf8'))),
+      rosterNames: files.includes('roster.json') ? parseRoster(await readFile(join(sampleDir, 'roster.json'), 'utf8')) : [],
     })
   }
   return samples
@@ -103,11 +114,11 @@ async function runOne(
     if (openAiCandidate) {
       if (!openAiKey) throw new Error('OPENAI_API_KEY is required')
       candidate = openAiCandidate
-      extraction = await runOpenAiExtraction(openAiCandidate, { apiKey: openAiKey }, sample.image)
+      extraction = await runOpenAiExtraction(openAiCandidate, { apiKey: openAiKey }, sample.image, { rosterNames: sample.rosterNames })
     } else if (workersAiCandidate) {
       if (!runner) throw new Error('CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are required')
       candidate = workersAiCandidate
-      extraction = await runWorkersAiExtraction(workersAiCandidate, runner, sample.image)
+      extraction = await runWorkersAiExtraction(workersAiCandidate, runner, sample.image, { rosterNames: sample.rosterNames })
     } else {
       throw new Error(`unknown model: ${model}`)
     }

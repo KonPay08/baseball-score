@@ -1,6 +1,7 @@
 import { applyCorrections, CorrectionError, type Correction } from '~/features/scoresheet/review'
 import type { ScoreSheetExtractor } from './extractor'
 import { runExtraction, toJobView, type Job, type JobStore } from './jobs'
+import type { RosterStore } from './roster'
 
 export const MAX_IMAGE_BYTES = 10 * 1024 * 1024
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif']
@@ -8,6 +9,7 @@ export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'i
 export interface ApiDeps {
   store: JobStore
   extractor: ScoreSheetExtractor
+  roster: RosterStore
 }
 
 export function errorResponse(status: number, code: string, message: string, details?: unknown) {
@@ -61,11 +63,14 @@ export async function createJob(request: Request, deps: ApiDeps): Promise<Respon
   deps.store.put(job)
   if (idempotencyKey) deps.store.setIdempotencyKey(idempotencyKey, job.id)
 
-  const result = await runExtraction(deps.store, deps.extractor, job, {
-    fileName: image.name,
-    contentType: image.type,
-    bytes: await image.arrayBuffer(),
-  })
+  const players = await deps.roster.list()
+  const result = await runExtraction(
+    deps.store,
+    deps.extractor,
+    job,
+    { fileName: image.name, contentType: image.type, bytes: await image.arrayBuffer() },
+    players,
+  )
   return Response.json({ job: toJobView(result) }, { status: 201 })
 }
 
@@ -91,10 +96,15 @@ function parseCorrections(body: unknown): { expectedRevision: number; correction
   const parsed: Correction[] = []
   for (const [i, c] of corrections.entries()) {
     if (typeof c !== 'object' || c === null) return `corrections[${i}] must be an object`
-    const { plateAppearanceId, field, value } = c as Record<string, unknown>
+    const { plateAppearanceId, batterId, field, value } = c as Record<string, unknown>
+    if (field === 'name') {
+      if (typeof batterId !== 'string') return `corrections[${i}].batterId must be a string`
+      parsed.push({ batterId, field, value })
+      continue
+    }
     if (typeof plateAppearanceId !== 'string') return `corrections[${i}].plateAppearanceId must be a string`
     if (field !== 'result' && field !== 'rbi' && field !== 'run') {
-      return `corrections[${i}].field must be one of result, rbi, run`
+      return `corrections[${i}].field must be one of result, rbi, run, name`
     }
     parsed.push({ plateAppearanceId, field, value })
   }
@@ -124,6 +134,14 @@ export async function correctRecord(jobId: string, request: Request, deps: ApiDe
 
   try {
     const record = applyCorrections(job.record, parsed.corrections)
+    for (const c of parsed.corrections) {
+      if (c.field !== 'name') continue
+      const batter = record.batters.find((b) => b.id === c.batterId)
+      if (!batter?.name.value) continue
+      const player = await deps.roster.findOrCreate(batter.name.value)
+      batter.playerId = player.id
+      batter.name = { ...batter.name, value: player.name }
+    }
     const updated: Job = { ...job, record, revision: job.revision + 1, updatedAt: new Date().toISOString() }
     deps.store.put(updated)
     return Response.json({ job: toJobView(updated) })
@@ -133,4 +151,8 @@ export async function correctRecord(jobId: string, request: Request, deps: ApiDe
     }
     throw e
   }
+}
+
+export async function listPlayers(deps: ApiDeps): Promise<Response> {
+  return Response.json({ players: await deps.roster.list() })
 }

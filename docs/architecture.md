@@ -29,7 +29,9 @@ Cloudflare Workers（ローカルでは `@cloudflare/vite-plugin` 上の workerd
 
 ## Database
 
-未使用。Job は Worker のメモリ上（`createMemoryJobStore`）に保持し、dev サーバーを再起動すると消える。永続化が必要になったら、`JobStore` の実装を D1 に差し替える。
+- 選手名簿だけ D1（binding `DB`、テーブル `players`）に保存する（`src/server/roster.ts`）。テーブルは初回アクセス時に `CREATE TABLE IF NOT EXISTS` で作る。`DB` binding が無い環境ではメモリ上の名簿を使う。
+- Job は Worker のメモリ上（`createMemoryJobStore`）に保持し、dev サーバーを再起動すると消える。
+- 判断は `docs/decisions/0005-roster-matching.md`。
 
 ## Authentication
 

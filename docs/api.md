@@ -26,7 +26,7 @@ Base path: `/api`。レスポンスはすべてJSON。
   status: 'processing' | 'succeeded' | 'failed'
   createdAt: string; updatedAt: string
   image: { fileName: string; contentType: string; size: number }
-  extractor: string            // 'sample-fixture' | 'workers-ai:<model>'
+  extractor: string            // 'sample-fixture' | 'workers-ai:<model>' | 'openai:<model>'
   error: { code: 'extraction_failed' | 'internal_error'; message: string } | null
   record: GameRecord | null    // 修正を反映した記録
   revision: number             // 修正のたびに+1
@@ -44,6 +44,12 @@ Base path: `/api`。レスポンスはすべてJSON。
 - Header `Idempotency-Key`（任意）：同じキーで再送すると、新しい Job を作らずに既存の Job を `200` で返す。
 - `201 { job }`。解析に失敗した場合も Job は作成され、`status: 'failed'` を返す。
 - サンプル抽出器は、ファイル名に `fail` を含む画像で解析失敗を再現する。
+
+- 抽出前に名簿を AI に候補として渡し、抽出後に名簿と照合する。名簿と一致しなかった打者は `reviewItems` に `field: 'name'`（`plateAppearanceId: null`、`battingOrder`、`slot`）として入る。
+
+## GET /api/players
+
+登録済みの名簿。`200 { players: { id: string; name: string }[] }`
 
 ## GET /api/jobs/:jobId
 
@@ -66,5 +72,6 @@ Base path: `/api`。レスポンスはすべてJSON。
 }
 ```
 
-- `field`: `result`（打席結果コード）/ `rbi`（0〜4の整数）/ `run`（boolean）
+- 選手名の修正は `{ "batterId": "b4", "field": "name", "value": "山田 太郎" }`（1〜40文字）。名簿に同じ名前がなければ登録し、その選手に紐付ける（`batter.playerId`）。
+- `field`: `result`（打席結果コード）/ `rbi`（0〜4の整数）/ `run`（boolean）/ `name`（文字列、`batterId` で指定）
 - `200 { job }`。成績は再計算され、`revision` が+1される。

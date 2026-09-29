@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, it } from 'vitest'
-import { correctRecord, createJob, getExtraction, getJob, type ApiDeps } from '~/server/api'
+import { correctRecord, createJob, getExtraction, getJob, listPlayers, type ApiDeps } from '~/server/api'
 import { sampleExtractor } from '~/server/extractor'
 import { createMemoryJobStore, type JobView } from '~/server/jobs'
+import { createMemoryRosterStore } from '~/server/roster'
+import { sampleGameRecord } from '../fixtures/sample-game-record'
 
 let deps: ApiDeps
 
 beforeEach(() => {
-  deps = { store: createMemoryJobStore(), extractor: sampleExtractor }
+  const players = sampleGameRecord.batters.map((b) => ({ id: `p-${b.id}`, name: b.name.value ?? '' }))
+  deps = { store: createMemoryJobStore(), extractor: sampleExtractor, roster: createMemoryRosterStore(players) }
 })
 
 function uploadRequest(file: File | null, headers: Record<string, string> = {}) {
@@ -121,5 +124,43 @@ describe('PATCH /api/jobs/:id/record', () => {
       deps,
     )
     expect(badField.status).toBe(400)
+  })
+})
+
+describe('roster', () => {
+  it('asks for unmatched names, registers entered names and matches them on the next upload', async () => {
+    deps = { ...deps, roster: createMemoryRosterStore() }
+    const created = await jobOf(await createJob(uploadRequest(png()), deps))
+    expect(created.reviewItems.filter((i) => i.field === 'name')).toHaveLength(9)
+
+    const res = await correctRecord(
+      created.id,
+      patchRequest({ expectedRevision: 0, corrections: [{ batterId: 'b1', field: 'name', value: '佐藤 大翔' }] }),
+      deps,
+    )
+    const job = await jobOf(res)
+    expect(job.record?.batters[0].playerId).toBeDefined()
+    expect(job.reviewItems.filter((i) => i.field === 'name')).toHaveLength(8)
+    const { players } = (await (await listPlayers(deps)).json()) as { players: { name: string }[] }
+    expect(players.map((p) => p.name)).toEqual(['佐藤 大翔'])
+
+    const next = await jobOf(await createJob(uploadRequest(png()), deps))
+    expect(next.record?.batters[0].playerId).toBe(job.record?.batters[0].playerId)
+  })
+
+  it('passes roster names to the extractor', async () => {
+    let received: readonly string[] = []
+    deps = {
+      ...deps,
+      extractor: {
+        name: 'spy',
+        async extract(image, context) {
+          received = context?.rosterNames ?? []
+          return sampleExtractor.extract(image)
+        },
+      },
+    }
+    await createJob(uploadRequest(png()), deps)
+    expect(received).toContain('佐藤 大翔')
   })
 })

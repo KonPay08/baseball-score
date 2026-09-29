@@ -7,6 +7,8 @@ import {
   type CellField,
   type PlateAppearance,
 } from '~/features/scoresheet/model'
+import type { Correction } from '~/features/scoresheet/review'
+import { slotInBattingOrder } from '~/features/scoresheet/roster'
 import type { JobView } from '~/server/jobs'
 
 type Draft = Record<string, unknown>
@@ -14,22 +16,29 @@ const draftKey = (paId: string, field: CellField) => `${paId}:${field}`
 
 interface Props {
   job: JobView
+  rosterNames: readonly string[]
   submitting: boolean
-  onSubmit: (corrections: { plateAppearanceId: string; field: CellField; value: unknown }[]) => void
+  onSubmit: (corrections: Correction[]) => void
 }
 
-export function ScoreSheetReview({ job, submitting, onSubmit }: Props) {
+export function ScoreSheetReview({ job, rosterNames, submitting, onSubmit }: Props) {
   const [draft, setDraft] = useState<Draft>({})
+  const [names, setNames] = useState<Record<string, string>>({})
   const record = job.record
   if (!record) return null
 
   const set = (paId: string, field: CellField, value: unknown) =>
     setDraft((d) => ({ ...d, [draftKey(paId, field)]: value }))
 
-  const pending = Object.entries(draft).map(([key, value]) => {
-    const [plateAppearanceId, field] = key.split(':') as [string, CellField]
-    return { plateAppearanceId, field, value }
-  })
+  const pending: Correction[] = [
+    ...Object.entries(names)
+      .filter(([, value]) => value.trim() !== '')
+      .map(([batterId, value]): Correction => ({ batterId, field: 'name', value })),
+    ...Object.entries(draft).map(([key, value]): Correction => {
+      const [plateAppearanceId, field] = key.split(':') as [string, CellField]
+      return { plateAppearanceId, field, value }
+    }),
+  ]
 
   return (
     <section className="space-y-3">
@@ -44,6 +53,7 @@ export function ScoreSheetReview({ job, submitting, onSubmit }: Props) {
           onClick={() => {
             onSubmit(pending)
             setDraft({})
+            setNames({})
           }}
         >
           修正を反映（{pending.length}）
@@ -51,7 +61,13 @@ export function ScoreSheetReview({ job, submitting, onSubmit }: Props) {
       </div>
       <p className="text-sm text-gray-600">
         黄色＝読み取りに自信がない、赤＝判読不能。原本と照合し、正しい値を選んで「修正を反映」を押してください。確定済みの値も変更できます。
+        名簿にない名前は入力してください。入力した名前は名簿に登録され、次回から照合に使われます。
       </p>
+      <datalist id="roster-names">
+        {rosterNames.map((n) => (
+          <option key={n} value={n} />
+        ))}
+      </datalist>
       <div className="overflow-x-auto">
         <table className="min-w-full border text-sm">
           <thead className="bg-gray-100">
@@ -65,7 +81,20 @@ export function ScoreSheetReview({ job, submitting, onSubmit }: Props) {
             {record.batters.map((b) => (
               <tr key={b.id}>
                 <td className="border px-2 py-1 text-center">{b.battingOrder}</td>
-                <td className="border px-2 py-1 whitespace-nowrap">{b.name.value ?? '（判読不能）'}</td>
+                <td className="border px-2 py-1 whitespace-nowrap">
+                  {b.playerId ? (
+                    <span className="text-green-700" title="名簿と一致">
+                      {b.name.value}
+                    </span>
+                  ) : (
+                    <NameInput
+                      label={nameLabel(b.battingOrder, slotInBattingOrder(record.batters, b))}
+                      extracted={b.name.value}
+                      value={names[b.id]}
+                      onChange={(v) => setNames((n) => ({ ...n, [b.id]: v }))}
+                    />
+                  )}
+                </td>
                 <td className="border px-2 py-1">
                   <div className="flex flex-wrap gap-2">
                     {b.plateAppearances.map((pa) => (
@@ -79,6 +108,39 @@ export function ScoreSheetReview({ job, submitting, onSubmit }: Props) {
         </table>
       </div>
     </section>
+  )
+}
+
+function nameLabel(battingOrder: number, slot: number) {
+  return slot > 1 ? `打順${battingOrder}の${slot}人目の名前` : `打順${battingOrder}の名前`
+}
+
+function NameInput({
+  label,
+  extracted,
+  value,
+  onChange,
+}: {
+  label: string
+  extracted: string | null
+  value: string | undefined
+  onChange: (value: string) => void
+}) {
+  return (
+    <label className="flex flex-col gap-0.5 text-xs">
+      <span className="text-gray-600">
+        {label}を入力{extracted ? `（読み取り：${extracted}）` : '（判読不能）'}
+      </span>
+      <input
+        aria-label={label}
+        list="roster-names"
+        maxLength={40}
+        className={`w-36 rounded border px-1 py-0.5 text-sm ${value ? 'border-blue-500 bg-blue-50' : 'border-yellow-500 bg-yellow-50'}`}
+        value={value ?? ''}
+        placeholder={extracted ?? ''}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </label>
   )
 }
 
