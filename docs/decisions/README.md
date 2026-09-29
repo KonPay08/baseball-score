@@ -31,3 +31,4 @@ Accepted / Superseded
 - [0001. Prototype API architecture](0001-prototype-api-architecture.md)
 - [0002. Workers AI extraction evaluation harness](0002-workers-ai-extraction-evaluation.md)
 - [0003. Select the extractor from Worker environment variables](0003-select-extractor-from-env.md)
+- [0004. OpenAI extractor](0004-openai-extractor.md)
