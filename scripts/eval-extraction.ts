@@ -1,7 +1,8 @@
 /**
  * Runs extraction candidates against labelled score sheets and prints per-field accuracy, latency and cost.
  *
- *   pnpm eval                                  # all Workers AI candidates on eval/samples
+ *   pnpm eval                                  # all Workers AI and OpenAI candidates on eval/samples
+ *   pnpm eval --models gpt-5.6-terra,gpt-5.6-luna
  *   pnpm eval --models sample --samples eval/example
  *   pnpm eval --models @cf/meta/llama-4-scout-17b-16e-instruct
  *
@@ -18,13 +19,13 @@ import {
   type GroundTruth,
 } from '~/features/scoresheet/evaluation'
 import { sampleExtractor, type ScoreSheetImage } from '~/server/extractor'
+import { OPENAI_VISION_CANDIDATES, runOpenAiExtraction } from '~/server/openai'
 import {
   WORKERS_AI_VISION_CANDIDATES,
   createRestRunner,
   runWorkersAiExtraction,
   type ModelRunner,
   type TokenUsage,
-  type WorkersAiCandidate,
 } from '~/server/workersAi'
 
 const IMAGE_TYPES: Record<string, string> = {
@@ -76,12 +77,17 @@ async function loadSamples(dir: string): Promise<Sample[]> {
   return samples
 }
 
-function cost(candidate: WorkersAiCandidate, usage: TokenUsage): number | null {
+function cost(candidate: { pricing: { input: number; output: number } }, usage: TokenUsage): number | null {
   if (usage.promptTokens === null || usage.completionTokens === null) return null
   return (usage.promptTokens * candidate.pricing.input + usage.completionTokens * candidate.pricing.output) / 1e6
 }
 
-async function runOne(model: string, sample: Sample, runner: ModelRunner | null): Promise<RunResult> {
+async function runOne(
+  model: string,
+  sample: Sample,
+  runner: ModelRunner | null,
+  openAiKey: string | null,
+): Promise<RunResult> {
   const started = performance.now()
   const base = { model, sample: sample.id }
   try {
@@ -90,10 +96,22 @@ async function runOne(model: string, sample: Sample, runner: ModelRunner | null)
       const ms = performance.now() - started
       return { ...base, ms, usage: null, costUsd: 0, report: evaluateExtraction(sample.truth, record), error: null, rawText: null }
     }
-    const candidate = WORKERS_AI_VISION_CANDIDATES.find((c) => c.model === model)
-    if (!candidate) throw new Error(`unknown model: ${model}`)
-    if (!runner) throw new Error('CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are required')
-    const { record, rawText, usage } = await runWorkersAiExtraction(candidate, runner, sample.image)
+    const openAiCandidate = OPENAI_VISION_CANDIDATES.find((c) => c.model === model)
+    const workersAiCandidate = WORKERS_AI_VISION_CANDIDATES.find((c) => c.model === model)
+    let extraction
+    let candidate
+    if (openAiCandidate) {
+      if (!openAiKey) throw new Error('OPENAI_API_KEY is required')
+      candidate = openAiCandidate
+      extraction = await runOpenAiExtraction(openAiCandidate, { apiKey: openAiKey }, sample.image)
+    } else if (workersAiCandidate) {
+      if (!runner) throw new Error('CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN are required')
+      candidate = workersAiCandidate
+      extraction = await runWorkersAiExtraction(workersAiCandidate, runner, sample.image)
+    } else {
+      throw new Error(`unknown model: ${model}`)
+    }
+    const { record, rawText, usage } = extraction
     return {
       ...base,
       ms: performance.now() - started,
@@ -135,17 +153,20 @@ async function main() {
       out: { type: 'string', default: 'eval/results' },
     },
   })
-  const models = values.models ? values.models.split(',').map((m) => m.trim()) : WORKERS_AI_VISION_CANDIDATES.map((c) => c.model)
+  const models = values.models
+    ? values.models.split(',').map((m) => m.trim())
+    : [...WORKERS_AI_VISION_CANDIDATES, ...OPENAI_VISION_CANDIDATES].map((c) => c.model)
   const samples = await loadSamples(values.samples)
   if (samples.length === 0) throw new Error(`no samples found in ${values.samples}`)
 
   const { CLOUDFLARE_ACCOUNT_ID: accountId, CLOUDFLARE_API_TOKEN: apiToken } = process.env
   const runner = accountId && apiToken ? createRestRunner({ accountId, apiToken }) : null
+  const openAiKey = process.env.OPENAI_API_KEY || null
 
   const results: RunResult[] = []
   for (const model of models) {
     for (const sample of samples) {
-      const result = await runOne(model, sample, runner)
+      const result = await runOne(model, sample, runner, openAiKey)
       console.log(`${model} / ${sample.id}: ${result.error ?? `${Math.round(result.ms)}ms`}`)
       results.push(result)
     }

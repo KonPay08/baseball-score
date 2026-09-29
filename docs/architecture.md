@@ -37,14 +37,16 @@ Cloudflare Workers（ローカルでは `@cloudflare/vite-plugin` 上の workerd
 
 ## External Services
 
-AI解析のモデルは未選定（評価待ち）。アプリの抽出器は Worker の環境変数でリクエストごとに選ぶ（`src/server/extractorConfig.ts`、`src/server/runtime.ts`）。
+AI解析のモデルは未選定（評価待ち）。アプリの抽出器は Worker の環境変数でリクエストごとに選ぶ（`src/server/extractorConfig.ts`、`src/server/runtime.ts`）。優先順は OpenAI → Workers AI → `sampleExtractor`。
 
 | 環境変数 | 内容 |
 | --- | --- |
+| `OPENAI_API_KEY` | あれば OpenAI Responses API で読み取る（`src/server/openai.ts`）。Workers AI より優先。 |
+| `OPENAI_MODEL` | 任意。`OPENAI_VISION_CANDIDATES` のモデル名。未指定は暫定で `gpt-5.6-terra`。候補外の値は解析失敗になる。 |
 | `CLOUDFLARE_ACCOUNT_ID` / `CLOUDFLARE_API_TOKEN` | 両方あれば Workers AI の REST API で読み取る。どちらかが無ければ `sampleExtractor`。 |
 | `WORKERS_AI_MODEL` | 任意。`WORKERS_AI_VISION_CANDIDATES` のモデル名。未指定は暫定で `@cf/meta/llama-4-scout-17b-16e-instruct`。候補外の値は解析失敗になる。 |
 
-- Workers AI の抽出器（`src/server/workersAi.ts`）と評価スクリプト（`pnpm eval`）の手順は `docs/evaluation.md`、判断は `docs/decisions/0002-workers-ai-extraction-evaluation.md` と `0003-select-extractor-from-env.md`。
+- Workers AI の抽出器（`src/server/workersAi.ts`）と評価スクリプト（`pnpm eval`）の手順は `docs/evaluation.md`、判断は `docs/decisions/0002-workers-ai-extraction-evaluation.md`、`0003-select-extractor-from-env.md`、`0004-openai-extractor.md`。
 
 ## Architecture Principles
 

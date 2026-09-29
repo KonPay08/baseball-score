@@ -1,17 +1,18 @@
 # Extraction Evaluation
 
-AI の読み取り精度を、人が作った正解データと突き合わせて比較する仕組み。現在の比較対象は Workers AI の画像対応モデルだけ（`WORKERS_AI_VISION_CANDIDATES`、`src/server/workersAi.ts`）。
+AI の読み取り精度を、人が作った正解データと突き合わせて比較する仕組み。比較対象は Workers AI の画像対応モデル（`WORKERS_AI_VISION_CANDIDATES`、`src/server/workersAi.ts`）と OpenAI のモデル（`OPENAI_VISION_CANDIDATES`、`src/server/openai.ts`）。
 
 ## 準備
 
 1. `eval/samples/<試合ID>/` に `image.jpg` と `expected.json` を置く（`eval/samples/README.md`）。
-2. `.env` に `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN`（Workers AI 権限のみのトークン）を設定する。
+2. `.env` に比較するプロバイダの認証情報を設定する。Workers AI は `CLOUDFLARE_ACCOUNT_ID` と `CLOUDFLARE_API_TOKEN`（Workers AI 権限のみのトークン）、OpenAI は `OPENAI_API_KEY`。
 3. `@cf/meta/llama-3.2-11b-vision-instruct` は初回に Meta のライセンス同意が必要（モデルに `"prompt": "agree"` を送る。Cloudflare のモデルページ参照）。
 
 ## 実行
 
 ```bash
 pnpm eval                                   # 全候補 × eval/samples
+pnpm eval --models gpt-5.6-terra,gpt-5.6-luna
 pnpm eval --models @cf/google/gemma-3-12b-it,@cf/qwen/qwen3.8-27b
 pnpm eval --models sample --samples eval/example   # APIキーなしで仕組みだけ確認
 ```
@@ -33,7 +34,7 @@ pnpm eval --models sample --samples eval/example   # APIキーなしで仕組み
 - 正解率 = (correct + correctFlagged) / 正解の値の数
 - 見逃し誤り = silentError / 正解の値の数
 - 要確認数 = UI で確認を求めるセル数（`listReviewItems`）
-- 費用 = モデルが返したトークン数 × モデルページの単価（2026-09-28 時点）。無料枠（Neurons）との換算は実測後に確認する。
+- 費用 = モデルが返したトークン数 × モデルページの単価（Workers AI は 2026-09-28、OpenAI は 2026-09-29 時点の標準料金）。無料枠（Neurons）との換算は実測後に確認する。
 
 照合方法：打者は打順、打席はイニング順に並べた位置で対応させる。選手名は空白の違いを無視する。
 

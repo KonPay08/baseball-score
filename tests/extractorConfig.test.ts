@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { sampleExtractor } from '~/server/extractor'
-import { DEFAULT_WORKERS_AI_MODEL, selectExtractor } from '~/server/extractorConfig'
+import { DEFAULT_OPENAI_MODEL, DEFAULT_WORKERS_AI_MODEL, selectExtractor } from '~/server/extractorConfig'
 
 const image = { fileName: 'sheet.jpg', contentType: 'image/jpeg', bytes: new ArrayBuffer(1) }
 
@@ -32,5 +32,16 @@ describe('selectExtractor', () => {
       WORKERS_AI_MODEL: '@cf/unknown/model',
     })
     await expect(extractor.extract(image)).rejects.toThrow('WORKERS_AI_MODEL')
+  })
+
+  it('prefers OpenAI when OPENAI_API_KEY is set', () => {
+    const extractor = selectExtractor({ OPENAI_API_KEY: 'sk', CLOUDFLARE_ACCOUNT_ID: 'acc', CLOUDFLARE_API_TOKEN: 'tok' })
+    expect(extractor.name).toBe(`openai:${DEFAULT_OPENAI_MODEL}`)
+    expect(selectExtractor({ OPENAI_API_KEY: 'sk', OPENAI_MODEL: 'gpt-5.6-luna' }).name).toBe('openai:gpt-5.6-luna')
+  })
+
+  it('fails extraction for an unsupported OpenAI model', async () => {
+    const extractor = selectExtractor({ OPENAI_API_KEY: 'sk', OPENAI_MODEL: 'gpt-unknown' })
+    await expect(extractor.extract(image)).rejects.toThrow('OPENAI_MODEL')
   })
 })
