@@ -30,10 +30,12 @@ export function ScoreSheetReview({ job, rosterNames, submitting, onSubmit }: Pro
   const set = (paId: string, field: CellField, value: unknown) =>
     setDraft((d) => ({ ...d, [draftKey(paId, field)]: value }))
 
+  const nameOf = (batterId: string, extracted: string | null) => names[batterId] ?? extracted ?? ''
+
   const pending: Correction[] = [
-    ...Object.entries(names)
-      .filter(([, value]) => value.trim() !== '')
-      .map(([batterId, value]): Correction => ({ batterId, field: 'name', value })),
+    ...record.batters
+      .filter((b) => !b.playerId && nameOf(b.id, b.name.value).trim() !== '')
+      .map((b): Correction => ({ batterId: b.id, field: 'name', value: nameOf(b.id, b.name.value) })),
     ...Object.entries(draft).map(([key, value]): Correction => {
       const [plateAppearanceId, field] = key.split(':') as [string, CellField]
       return { plateAppearanceId, field, value }
@@ -61,7 +63,7 @@ export function ScoreSheetReview({ job, rosterNames, submitting, onSubmit }: Pro
       </div>
       <p className="text-sm text-gray-600">
         黄色＝読み取りに自信がない、赤＝判読不能。原本と照合し、正しい値を選んで「修正を反映」を押してください。確定済みの値も変更できます。
-        名簿にない名前は入力してください。入力した名前は名簿に登録され、次回から照合に使われます。
+        名簿にない名前には読み取った名前が入っています。違う名前だけ直して「修正を反映」を押すと、名簿に登録され、次回から照合に使われます。
       </p>
       <datalist id="roster-names">
         {rosterNames.map((n) => (
@@ -90,7 +92,9 @@ export function ScoreSheetReview({ job, rosterNames, submitting, onSubmit }: Pro
                     <NameInput
                       label={nameLabel(b.battingOrder, slotInBattingOrder(record.batters, b))}
                       extracted={b.name.value}
-                      value={names[b.id]}
+                      confidence={b.name.confidence}
+                      edited={b.id in names}
+                      value={nameOf(b.id, b.name.value)}
                       onChange={(v) => setNames((n) => ({ ...n, [b.id]: v }))}
                     />
                   )}
@@ -118,26 +122,36 @@ function nameLabel(battingOrder: number, slot: number) {
 function NameInput({
   label,
   extracted,
+  confidence,
+  edited,
   value,
   onChange,
 }: {
   label: string
   extracted: string | null
-  value: string | undefined
+  confidence: Cell<string>['confidence']
+  edited: boolean
+  value: string
   onChange: (value: string) => void
 }) {
+  const tone = edited
+    ? 'border-blue-500 bg-blue-50'
+    : !value || confidence === 'unreadable'
+      ? 'border-red-500 bg-red-50'
+      : confidence === 'low'
+        ? 'border-yellow-500 bg-yellow-50'
+        : 'border-gray-300'
   return (
     <label className="flex flex-col gap-0.5 text-xs">
       <span className="text-gray-600">
-        {label}を入力{extracted ? `（読み取り：${extracted}）` : '（判読不能）'}
+        {label}（名簿にありません{extracted ? '' : '・判読不能'}）
       </span>
       <input
         aria-label={label}
         list="roster-names"
         maxLength={40}
-        className={`w-36 rounded border px-1 py-0.5 text-sm ${value ? 'border-blue-500 bg-blue-50' : 'border-yellow-500 bg-yellow-50'}`}
-        value={value ?? ''}
-        placeholder={extracted ?? ''}
+        className={`w-36 rounded border px-1 py-0.5 text-sm ${tone}`}
+        value={value}
         onChange={(e) => onChange(e.target.value)}
       />
     </label>
